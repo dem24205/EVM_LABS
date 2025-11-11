@@ -79,22 +79,18 @@ int main() {
     size_t border = 1;
     for (size_t n = min_N; n < max_N; n += inc) {
         out << (n * 4) / 1024;
-        
         //Forward
         fill_forward(array, n);
         warm_up(array, n);
         out << "," << measure_min_ticks(array, n);
-        
         //Backward
         fill_backward(array, n);
         warm_up(array, n);
         out << "," << measure_min_ticks(array, n);
-        
         //Random
         fill_random(array, n);
         warm_up(array, n);
         out << "," << measure_min_ticks(array, n);
-        
         out << "\n";
         if ((n * 4) / 1024 >= border) {
             inc <<= 1;
