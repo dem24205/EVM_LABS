@@ -38,7 +38,8 @@ void fill_random(int* array, size_t size) {
 }
 
 void warm_up(const int* array, size_t size) {
-    for (size_t k = 0, i = 0; i < size; ++i) {
+    volatile size_t k = 0;
+    for (size_t i = 0; i < size; ++i) {
         k = array[k];
     }
 }
@@ -50,13 +51,23 @@ uint64_t getCpuTicks() {
 }
 
 uint64_t measure(const int* array, const size_t size) {
-    size_t k, i;
+    volatile size_t k = 0;
+    size_t i;
     const uint64_t start = getCpuTicks();
     for (k = 0, i = 0; i < size; ++i) {
         k = array[k];
     }
     const uint64_t end = getCpuTicks();
     return (end - start) / size;
+}
+
+uint64_t measure_min_ticks(const int* array, const size_t size) {
+    uint64_t min_ticks = UINT64_MAX;
+    for (size_t i = 0; i < 7; ++i) {
+        uint64_t ticks = measure(array, size);
+        min_ticks = min_ticks > ticks ? ticks : min_ticks;
+    }
+    return min_ticks;
 }
 
 int main() {
@@ -68,33 +79,22 @@ int main() {
     size_t border = 1;
     for (size_t n = min_N; n < max_N; n += inc) {
         out << (n * 4) / 1024;
+        
         //Forward
         fill_forward(array, n);
         warm_up(array, n);
-        uint64_t min_ticks = UINT64_MAX;
-        for (size_t i = 0; i < 7; ++i) {
-            uint64_t ticks = measure(array, n);
-            min_ticks = min_ticks > ticks ? ticks : min_ticks;
-        }
-        out << "," << min_ticks;
+        out << "," << measure_min_ticks(array, n);
+        
         //Backward
         fill_backward(array, n);
         warm_up(array, n);
-        min_ticks = UINT64_MAX;
-        for (size_t i = 0; i < 7; ++i) {
-            uint64_t ticks = measure(array, n);
-            min_ticks = min_ticks > ticks ? ticks : min_ticks;
-        }
-        out << "," << min_ticks;
+        out << "," << measure_min_ticks(array, n);
+        
         //Random
         fill_random(array, n);
         warm_up(array, n);
-        min_ticks = UINT64_MAX;
-        for (size_t i = 0; i < 7; ++i) {
-            uint64_t ticks = measure(array, n);
-            min_ticks = min_ticks > ticks ? ticks : min_ticks;
-        }
-        out << "," << min_ticks;
+        out << "," << measure_min_ticks(array, n);
+        
         out << "\n";
         if ((n * 4) / 1024 >= border) {
             inc <<= 1;
